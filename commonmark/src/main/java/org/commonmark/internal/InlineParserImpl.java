@@ -15,7 +15,7 @@ import java.util.*;
 
 public class InlineParserImpl implements InlineParser, InlineParserState {
 
-    private final BitSet specialCharacters;
+    private BitSet specialCharacters;
     private final Map<Character, DelimiterProcessor> delimiterProcessors;
     private final InlineParserContext context;
     private final Map<Character, List<InlineContentParser>> inlineParsers;
@@ -40,10 +40,20 @@ public class InlineParserImpl implements InlineParser, InlineParserState {
 
         this.context = inlineParserContext;
         this.inlineParsers = new HashMap<>();
-        this.inlineParsers.put('\\', Collections.<InlineContentParser>singletonList(new BackslashInlineParser()));
-        this.inlineParsers.put('`', Collections.<InlineContentParser>singletonList(new BackticksInlineParser()));
-        this.inlineParsers.put('&', Collections.<InlineContentParser>singletonList(new EntityInlineParser()));
+        this.inlineParsers.put('\\', List.of(new BackslashInlineParser()));
+        this.inlineParsers.put('`', List.of(new BackticksInlineParser()));
+        this.inlineParsers.put('&', List.of(new EntityInlineParser()));
         this.inlineParsers.put('<', Arrays.asList(new AutolinkInlineParser(), new HtmlInlineParser()));
+
+        this.specialCharacters = calculateSpecialCharacters(this.delimiterProcessors.keySet(), inlineParsers.keySet());
+    }
+
+    public void addInlineParser(char initialChar, InlineContentParser inlineParser){
+        if(this.inlineParsers.containsKey(initialChar)){
+            this.inlineParsers.get(initialChar).add(inlineParser);
+        }else{
+            this.inlineParsers.put(initialChar, Arrays.asList(inlineParser));
+        }
 
         this.specialCharacters = calculateSpecialCharacters(this.delimiterProcessors.keySet(), inlineParsers.keySet());
     }
